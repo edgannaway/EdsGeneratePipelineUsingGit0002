@@ -1,0 +1,102 @@
+#!/usr/bin/env groovy
+import hudson.model.*
+import hudson.EnvVars
+import groovy.json.JsonSlurperClassic
+import groovy.json.JsonBuilder
+import groovy.json.JsonOutput
+import java.net.URL
+echo "EdsGeneratePipeline Version 0005"
+echo "The ISPW Stream being used is: ${ISPW_Stream}"
+echo "The ISPW Application being used is: ${ISPW_Application}"
+echo "The ISPW Container being used is: ${ISPW_Container}"
+echo "The ISPW Level being used is: ${ISPW_Level}"
+echo "The ISPW SetID being used is: ${ISPW_SetId}"
+echo "The ISPW Release being used is: ${ISPW_Release}"
+echo "The ISPW Event being used is: ${ISPW_Event}"
+
+//  
+
+// Jenkins credential ID and CES Personal Access token to be used for mainframe access
+String Jenkins_Id        = "hdaelg0"      //Id that was created in Jenkins
+String CES_Token         = "8ade625f-07a2-4be6-a9f8-0653c5969d07"   // Ed's CES Token using hdaelg0
+
+//Compuware Envirnoment to connect
+String HCI_Connection     = "cwcc:16196"
+String CES_Connection     = "cwcc:2020" 
+
+// SonarQube ID used for both project key and project name
+String SQ_Project         = "EdsPipeline0002"  
+
+// ISPW Levels and container to be used by the promote/deploy/generate/regress operations
+// String ISPW_Container     = Parm_ISPW_Container    //ContainerID
+// String ISPW_ContainerType = "assignments"   //Valid values are assignments or releases
+// String ISPW_Stream        = Parm_ISPW_Stream
+// String ISPW_Application   = Parm_ISPW_Application
+// String ISPW_RuntimeConfig = Parm_ISPW_RuntimeConfig
+// String ISPW_Dev_Level     = Parm_ISPW_Dev_Level
+// String ISPW_Stg_Level     = Parm_ISPW_Stg_Level
+
+String ISPW_Container     = "ELG1000017"    //ContainerID
+String ISPW_ContainerType = "assignments"   //Valid values are assignments or releases
+//String ISPW_Stream        = Parm_ISPW_Stream
+String ISPW_Application   = "ELG1000004"
+//String ISPW_RuntimeConfig = Parm_ISPW_RuntimeConfig
+//String ISPW_Dev_Level     = Parm_ISPW_Dev_Level
+//String ISPW_Stg_Level     = Parm_ISPW_Stg_Level
+
+// Start of Import from EdsGoldPipelinePromoteFromFIX
+//COmpuware Envirnoment to connect
+// Already Defined String HCI_Connection     = "cwcc:16196"
+// Already Defined String CES_Connection     = "cwcc:2020"       
+
+// Jenkins credential ID and CES Personal Access token to be used for mainframe access
+// Already Defined String Jenkins_Id        = "hdaelg0"      //Id that was created in Jenkins
+// Already Defined String CES_Token         = "8ade625f-07a2-4be6-a9f8-0653c5969d07"   // Ed's CES Token using hdaelg0
+
+// ISPW Levels and container to be used by the promote/deploy/generate/regress operations
+// Already Defined String ISPW_Container     = "GOLD000074"    //ContainerID
+// Already Defined String ISPW_ContainerType = "assignments"   //Valid values are assignments or releases
+String ISPW_Stream        = "POV"
+// Already Defined String ISPW_Application   = "GOLD"
+String ISPW_RuntimeConfig = "ISPW"
+String ISPW_Dev_Level     = "EMER"
+String ISPW_Stg_Level     = "EMER"
+String ISPW_Stg_Level1     = "FIX"
+//String ISPW_Token_Test    = "91bae501-8b4d-4155-909d-2ad5aa9f3131"
+String ISPW_Token_Test    = "f06cbdf8-5273-4664-8c54-1dc21cc8f3d9"
+
+// Directories for source and tests that are downloaded to the jenkins workspace
+String MF_Source          = ""        //future use
+String TTT_Project        = "EGDEMO0004"       // Need to update later ed          
+
+// Total Test JCL and Scenario/Testsuite used in CI process
+String TTT_TestPackage    = "CWXTCB45_Scenario"
+String TTT_PackageType    = ".testscenario"
+String TTT_Jcl            = "Runner.jcl"
+String CC_repository      = "HDAELG0.LIVE.DEMO.COBOL5.ESS.CODE.COVERAGE"
+
+// SonarQube ID used for both project key and project name
+// Already Defined String SQ_Project         = "EdsGoldPipelinePromoteFromFIX"                                
+
+// XL Release values
+String XLR_Template       = "Ed/Release from Jenkins (Ed)" // XL Release template to invoke at the end of the Jenkins workflow
+String XLR_User	          = "hdaelg0"					      // XL Release user ID
+String XLR_Release        = "EGDEMO0004"            // ISPW Release ID
+
+// End of Import from EdsGoldPipelinePromoteFromFIX
+
+stage('Download Code From ISPW')
+{
+    node{
+    checkout([$class: 'IspwContainerConfiguration', 
+        componentType: 'COB', 
+        connectionId: '91bae501-8b4d-4155-909d-2ad5aa9f3131', 
+        containerName: "${ISPW_Container}",       // "ELG1000017"
+//        containerName: 'ELG1000017', 
+        containerType: '0', 
+        credentialsId: 'hdaelg0', 
+        ispwDownloadAll: true, 
+        serverConfig: '', 
+        serverLevel: 'FIX'])
+    }
+}
