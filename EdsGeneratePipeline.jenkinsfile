@@ -184,3 +184,4 @@ stage("Load into SonarQube and Check SonarQube Quality Gate")
             }
     }
 }
+}
