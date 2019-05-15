@@ -154,7 +154,7 @@ stage('Retrieve Code Coverage Results')
     }
 }
 
-stage("Load into SonarQube")
+stage("Load into SonarQube and Check SonarQube Quality Gate")
 {
     node{
         // Requires SonarQube Scanner 2.8+
@@ -170,5 +170,17 @@ stage("Load into SonarQube")
            // bat "${scannerHome}/bin/sonar-scanner" + SQ_Tests + SQ_ProjectKey + SQ_Source + SQ_Cobol_conf
             bat "${scannerHome}/bin/sonar-scanner" + SQ_Tests + SQ_ProjectKey + SQ_Source + SQ_Copybook + SQ_Cobol_conf
         }
+        // Wait for the results of the SonarQube Quality Gate
+        timeout(time: 2, unit: 'MINUTES') {
+
+            // Wait for webhook call back from SonarQube.  SonarQube webhook for callback to Jenkins must be configured on the SonarQube server.
+            def qg = waitForQualityGate()
+
+            // Evaluate the status of the Quality Gate
+            if (qg.status != 'OK')
+            {
+                echo "Pipeline aborted due to quality gate failure: ${qg.status}"
+                error "Exiting Pipeline" // Exit the pipeline with an error if the SonarQube Quality Gate is failing
+            }
     }
 }
