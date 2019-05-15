@@ -100,3 +100,75 @@ stage('Download Code From ISPW')
         serverLevel: 'FIX'])
     }
 }
+
+stage('TTT Project Checkout from Git')
+{
+    // C:\Users\pfhsxk0\.jenkins\workspace\Eds Pipeline 0002 # 
+    node{
+        checkout changelog: false, 
+        poll: false, 
+        scm: 
+        [
+            $class: 'GitSCM', 
+            branches: [[name: '*/master']], 
+            doGenerateSubmoduleConfigurations: false, 
+            extensions: [], 
+            submoduleCfg: [], 
+            userRemoteConfigs: 
+                [
+                    [
+                        credentialsId: 'SharkWorks1_Github', 
+                        name: 'origin', 
+                        url: 'https://github.com/SharkWorks1/EdsFixPipeline0001.git'
+                    ]
+                ]
+        ]
+    }
+}
+ 
+stage('Run TTT Unit Test With Code Coverage')
+{
+    node{
+        step([$class: 'TotalTestBuilder', 
+        ccRepo: 'SALESSUP.ELG1.DEV1.CODE.COVERAGE', 
+        ccSystem: 'CWE-142758', 
+        ccTestId: 'CWE-142758',
+        connectionId: '196de681-04d7-4170-824f-09a5457c5cda', 
+        credentialsId: 'hdaelg0', 
+        hlq: '', 
+        ccClearStats: true,
+        jcl: 'Runner.jcl', 
+        projectFolder: 'EdsFixPipeline0001', 
+        testSuite: 'CWXTCOB_Scenario.testscenario'])        
+    }
+}
+
+stage('Retrieve Code Coverage Results')
+{
+    node{
+        step([$class: 'CodeCoverageBuilder', analysisProperties: '''cc.sources=ELG1
+        cc.repos=SALESSUP.ELG1.DEV1.CODE.COVERAGE
+        cc.system=CWE-142758
+        cc.test=CWE-142758
+        cc.ddio.overrides=''', analysisPropertiesPath: '', connectionId: '196de681-04d7-4170-824f-09a5457c5cda', credentialsId: 'hdaelg0'])            
+    }
+}
+
+stage("Load into SonarQube")
+{
+    node{
+        // Requires SonarQube Scanner 2.8+
+        def scannerHome = tool 'scanner';
+        withSonarQubeEnv('localhost') 
+        {
+            // Run SonarQube Scanner 
+            def SQ_Tests                = " -Dsonar.coverageReportPaths=Coverage/CodeCoverage.xml"
+            def SQ_ProjectKey           = " -Dsonar.projectKey=EdsFixPipelineProject -Dsonar.projectName=EdsFixPipelineProject -Dsonar.projectVersion=1.0"
+            def SQ_Source               = " -Dsonar.sources=ELG1\\MF_Source"
+            def SQ_Copybook             = " -Dsonar.cobol.copy.directories=ELG1\\MF_Source"
+            def SQ_Cobol_conf           = " -Dsonar.cobol.file.suffixes=cbl,testsuite,testscenario,stub,cpy -Dsonar.cobol.copy.suffixes=cpy -Dsonar.sourceEncoding=UTF-8"
+           // bat "${scannerHome}/bin/sonar-scanner" + SQ_Tests + SQ_ProjectKey + SQ_Source + SQ_Cobol_conf
+            bat "${scannerHome}/bin/sonar-scanner" + SQ_Tests + SQ_ProjectKey + SQ_Source + SQ_Copybook + SQ_Cobol_conf
+        }
+    }
+}
