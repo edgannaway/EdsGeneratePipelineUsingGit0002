@@ -101,6 +101,17 @@ stage('Download Code From ISPW')
     }
 }
 
+stage ('ISPW Get Assignment Task List')
+{
+    node{
+               ispwOperation connectionId: '91bae501-8b4d-4155-909d-2ad5aa9f3131', 
+                    credentialsId: 'hdaelg0ces', 
+                    ispwAction: 'GetAssignmentTaskList', 
+                    ispwRequestBody: '''assignmentId=ELG1000017
+                    level=FIX'''
+    }
+    
+}
 stage('TTT Project Checkout from Git')
 {
     // C:\Users\pfhsxk0\.jenkins\workspace\Eds Pipeline 0002 # 
@@ -180,10 +191,7 @@ stage("Load into SonarQube and Check SonarQube Quality Gate")
             if (qg.status != 'OK')
             {
                 echo "Pipeline aborted due to quality gate failure: ${qg.status}"
-                ispwOperation connectionId: '91bae501-8b4d-4155-909d-2ad5aa9f3131', 
-                    credentialsId: 'hdaelg0ces', 
-                    ispwAction: 'GetAssignmentTaskList', 
-                    ispwRequestBody: '''assignmentId=ELG1000017 level=FIX'''
+
                 error "Exiting Pipeline" // Exit the pipeline with an error if the SonarQube Quality Gate is failing
             }
     }
